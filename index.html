@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Личный штаб</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#12151c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root{
+    --bg:#12151c;
+    --panel:#1a1f29;
+    --panel-2:#212836;
+    --line:#2b3140;
+    --text:#eef1f5;
+    --muted:#8890a0;
+    --amber:#e8a33d;
+    --teal:#4fd1c5;
+    --red:#e0665f;
+  }
+  body[data-theme="light"]{
+    --bg:#f6f4ee;
+    --panel:#ffffff;
+    --panel-2:#efece3;
+    --line:#ddd7c8;
+    --text:#211d16;
+    --muted:#797262;
+    --amber:#b06f1e;
+    --teal:#0c8f83;
+    --red:#c1453a;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;transition:background .2s,color .2s;}
+  .app{display:flex;min-height:100vh;}
+
+  .sidebar{width:220px;background:var(--panel);border-right:1px solid var(--line);padding:28px 16px;display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
+  .brand{font-family:'Fraunces',serif;font-size:20px;font-weight:600;margin:0 8px 28px 8px;letter-spacing:-0.02em;}
+  .brand span{color:var(--amber);}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;color:var(--muted);font-size:14px;font-weight:500;transition:background .15s, color .15s;user-select:none;}
+  .nav-item:hover{background:var(--panel-2);color:var(--text);}
+  .nav-item.active{background:var(--panel-2);color:var(--amber);}
+  .nav-num{font-family:'JetBrains Mono',monospace;font-size:11px;opacity:.6;width:16px;}
+
+  .theme-toggle{margin-top:auto;padding:10px 12px;background:var(--panel-2);border-radius:8px;border:1px solid var(--line);cursor:pointer;font-size:13px;text-align:center;color:var(--muted);user-select:none;}
+  .theme-toggle:hover{color:var(--text);}
+
+  .topbar{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--line);padding:14px 44px;display:flex;justify-content:space-between;align-items:center;z-index:10;flex-wrap:wrap;gap:10px;}
+  .topbar-clock{font-family:'JetBrains Mono',monospace;font-size:15px;color:var(--text);}
+  .topbar-clock .date{color:var(--muted);font-size:12px;margin-top:2px;}
+  .topbar-deadline{text-align:right;}
+  .topbar-deadline-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+  .topbar-deadline-value{font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--teal);}
+
+  main{flex:1;min-width:0;}
+  .main-inner{padding:36px 44px;max-width:920px;}
+  .view{display:none;}
+  .view.active{display:block;animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+  h1{font-family:'Fraunces',serif;font-size:32px;font-weight:600;margin:0 0 6px 0;letter-spacing:-0.02em;}
+  .subtitle{color:var(--muted);font-size:14px;margin-bottom:28px;}
+
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px;align-items:center;}
+  input,select,textarea{background:var(--panel);border:1px solid var(--line);color:var(--text);padding:10px 12px;border-radius:8px;font-family:'Inter',sans-serif;font-size:14px;}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--amber);}
+  textarea{resize:vertical;width:100%;}
+  button{background:var(--amber);color:#1a1206;border:none;padding:10px 16px;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;transition:transform .1s;}
+  button:hover{transform:translateY(-1px);}
+  button.icon-del{background:transparent;color:var(--muted);padding:6px 10px;font-weight:400;}
+  button.icon-del:hover{color:var(--red);}
+  button.small{padding:6px 12px;font-size:12px;}
+
+  .filter-row{display:flex;gap:10px;margin-bottom:8px;}
+  .filter-row select{font-size:13px;padding:7px 10px;}
+
+  .ledger{border-top:1px solid var(--line);}
+  .entry{display:flex;align-items:flex-start;gap:16px;padding:16px 0;border-bottom:1px solid var(--line);}
+  .entry-date{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);width:78px;flex-shrink:0;padding-top:2px;}
+  .entry-body{flex:1;}
+  .entry-title{font-weight:600;font-size:15px;}
+  .entry-meta{font-size:12px;color:var(--muted);margin-top:2px;}
+  .tag{display:inline-block;font-size:11px;font-family:'JetBrains Mono',monospace;padding:2px 8px;border-radius:20px;border:1px solid var(--line);margin-right:6px;}
+  .tag.status-done{color:var(--teal);border-color:var(--teal);}
+  .tag.status-fail{color:var(--red);border-color:var(--red);}
+  .tag.status-progress{color:var(--amber);border-color:var(--amber);}
+  .del{cursor:pointer;color:var(--muted);font-size:13px;}
+  .del:hover{color:var(--red);}
+  .empty{color:var(--muted);font-size:14px;padding:24px 0;}
+
+  .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px;}
+  .stat-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px;}
+  .stat-num{font-family:'JetBrains Mono',monospace;font-size:26px;color:var(--amber);}
+  .stat-label{font-size:12px;color:var(--muted);margin-top:4px;}
+  .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .bar-label{width:120px;font-size:13px;color:var(--muted);flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .bar-track{flex:1;height:8px;background:var(--panel-2);border-radius:4px;overflow:hidden;}
+  .bar-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--amber));}
+  .bar-val{width:32px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);text-align:right;}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px;margin-bottom:16px;}
+  .card-title{font-weight:600;margin-bottom:10px;font-size:14px;}
+  .kv{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px;gap:12px;}
+  .kv:last-child{border-bottom:none;}
+  .kv .k{color:var(--muted);flex-shrink:0;}
+  .kv input{width:120px;text-align:right;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;}
+
+  .warn{background:rgba(224,102,95,.1);border:1px solid var(--red);color:var(--red);padding:12px 14px;border-radius:8px;font-size:13px;margin-bottom:18px;}
+  .info{background:rgba(79,209,197,.1);border:1px solid var(--teal);color:var(--teal);padding:12px 14px;border-radius:8px;font-size:13px;margin-bottom:18px;}
+
+  .today-date{font-family:'JetBrains Mono',monospace;color:var(--muted);font-size:13px;margin-bottom:20px;}
+  .checkin-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);}
+  .checkin-item input[type=checkbox]{width:20px;height:20px;accent-color:var(--teal);flex-shrink:0;cursor:pointer;}
+  .checkin-item input[type=text]{flex:1;background:transparent;border:none;font-size:16px;padding:6px 0;color:var(--text);}
+  .checkin-item input[type=text]:focus{outline:none;}
+  .checkin-item.done input[type=text]{color:var(--muted);text-decoration:line-through;}
+  .checkin-num{font-family:'JetBrains Mono',monospace;color:var(--muted);font-size:13px;width:16px;}
+
+  .goal-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin-bottom:14px;}
+  .goal-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:10px;}
+  .goal-name{font-weight:600;font-size:15px;}
+  .goal-nums{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted);text-align:right;}
+  .goal-track{height:10px;background:var(--panel-2);border-radius:5px;overflow:hidden;margin-bottom:10px;}
+  .goal-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--amber));transition:width .2s;}
+  .goal-info-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px;font-size:12px;color:var(--muted);}
+  .goal-rec{background:var(--panel-2);border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:10px;justify-content:space-between;}
+  .goal-rec-amount{font-family:'JetBrains Mono',monospace;color:var(--amber);font-size:14px;}
+  .goal-foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;}
+  .goal-pct{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--amber);}
+  .goal-edit{display:flex;gap:6px;align-items:center;}
+  .goal-edit input{width:110px;padding:6px 8px;font-size:12px;}
+
+  .mode-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px;}
+  .mode-card{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:12px;}
+  .mode-title{font-weight:600;font-size:13px;margin-bottom:4px;}
+  .mode-desc{font-size:11px;color:var(--muted);line-height:1.4;min-height:32px;}
+  .mode-amount{font-family:'JetBrains Mono',monospace;color:var(--amber);font-size:15px;margin:8px 0;}
+  .mode-card button{width:100%;padding:8px 10px;font-size:12px;}
+  .finance-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0 14px;}
+  .finance-mini{background:var(--panel-2);border-radius:8px;padding:10px 12px;}
+  .finance-mini .n{font-family:'JetBrains Mono',monospace;font-size:15px;}
+  .finance-mini .l{font-size:10px;color:var(--muted);margin-top:3px;}
+  .history{margin-top:12px;border-top:1px solid var(--line);padding-top:10px;}
+  .history-row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:12px;}
+  .history-row:last-child{border-bottom:none;}
+  .history-right{font-family:'JetBrains Mono',monospace;white-space:nowrap;}
+  .mode-chip{font-size:10px;padding:2px 6px;border:1px solid var(--line);border-radius:10px;color:var(--muted);margin-left:5px;}
+  .history-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;}
+  .history-btn{background:transparent;border:1px solid var(--line);color:var(--muted);padding:7px 10px;border-radius:7px;font-size:11px;}
+  .history-btn:hover{color:var(--text);background:var(--panel-2);}
+  .history-full{display:none;margin-top:10px;border-top:1px dashed var(--line);padding-top:8px;}
+  .history-full.open{display:block;}
+  .history-detail{display:grid;grid-template-columns:90px 1fr auto;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:12px;align-items:center;}
+  .history-detail:last-child{border-bottom:none;}
+  .history-date{font-family:'JetBrains Mono',monospace;color:var(--muted);}
+  .history-plan{color:var(--muted);}
+  .history-amount{font-family:'JetBrains Mono',monospace;text-align:right;}
+  .auth-lock{position:fixed;inset:0;z-index:9999;background:radial-gradient(120% 120% at 50% -10%, #1c2130 0%, #0d0f15 55%, #090a0d 100%);display:flex;align-items:center;justify-content:center;padding:24px;overflow:auto;}
+  body[data-theme="light"] .auth-lock{background:radial-gradient(120% 120% at 50% -10%, #fffdf8 0%, #efe9d9 60%, #e6ddc7 100%);}
+  .auth-glow{position:absolute;width:520px;height:520px;border-radius:50%;filter:blur(90px);opacity:.35;pointer-events:none;background:conic-gradient(from 180deg, var(--amber), var(--teal), var(--red), var(--amber));animation:authSpin 16s linear infinite;}
+  @keyframes authSpin{to{transform:rotate(360deg);}}
+  .auth-card{position:relative;width:min(420px,100%);background:linear-gradient(180deg, rgba(26,31,41,.92), rgba(20,24,32,.96));backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.08);border-radius:22px;padding:34px 30px 28px;box-shadow:0 30px 90px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.02) inset;animation:authRise .45s cubic-bezier(.2,.8,.2,1);}
+  body[data-theme="light"] .auth-card{background:linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,253,248,.98));border:1px solid rgba(0,0,0,.06);box-shadow:0 30px 90px rgba(0,0,0,.15);}
+  @keyframes authRise{from{opacity:0;transform:translateY(14px) scale(.98);}to{opacity:1;transform:translateY(0) scale(1);}}
+  .auth-badge{width:56px;height:56px;border-radius:16px;background:linear-gradient(140deg,var(--amber),#c9781f);display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 16px;box-shadow:0 10px 26px rgba(232,163,61,.35);}
+  .auth-card h2{font-family:'Fraunces',serif;font-size:24px;margin:0 0 4px;text-align:center;letter-spacing:-.01em;}
+  .auth-sub{color:var(--muted);font-size:12.5px;line-height:1.55;margin-bottom:22px;text-align:center;}
+  .auth-sub b{color:var(--text);font-weight:600;}
+
+  .otp-row{display:flex;gap:8px;justify-content:center;margin:6px 0 4px;}
+  .otp-box{width:44px;height:52px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:600;border-radius:10px;background:var(--panel-2);border:1.5px solid var(--line);color:var(--text);padding:0;transition:border-color .15s, transform .1s, box-shadow .15s;}
+  .otp-box:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(232,163,61,.15);}
+  .otp-row.shake{animation:otpShake .38s;}
+  .otp-row.shake .otp-box{border-color:var(--red);}
+  @keyframes otpShake{10%,90%{transform:translateX(-2px);}20%,80%{transform:translateX(4px);}30%,50%,70%{transform:translateX(-7px);}40%,60%{transform:translateX(7px);}}
+
+  .auth-primary-btn{width:100%;padding:13px 16px;border-radius:11px;font-size:14.5px;margin-top:18px;background:linear-gradient(135deg,var(--amber),#d38f2e);box-shadow:0 8px 22px rgba(232,163,61,.28);}
+  .auth-primary-btn:disabled{opacity:.45;box-shadow:none;cursor:default;transform:none;}
+  .auth-ghost-btn{width:100%;padding:11px 16px;border-radius:11px;font-size:13px;margin-top:10px;background:transparent;color:var(--muted);border:1px solid var(--line);}
+  .auth-ghost-btn:hover{color:var(--text);background:var(--panel-2);}
+  .auth-link{display:block;text-align:center;color:var(--muted);font-size:12.5px;margin-top:16px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;}
+  .auth-link:hover{color:var(--teal);}
+  .auth-status{font-size:12.5px;margin-top:12px;color:var(--teal);min-height:16px;text-align:center;font-weight:500;}
+  .auth-status.err{color:var(--red);}
+  .auth-user{font-size:12px;color:var(--muted);margin-top:8px;text-align:center;}
+
+  .recovery-box{background:var(--panel-2);border:1.5px dashed var(--amber);border-radius:12px;padding:16px;margin:14px 0;text-align:center;}
+  .recovery-code{font-family:'JetBrains Mono',monospace;font-size:19px;letter-spacing:.12em;color:var(--amber);font-weight:700;word-break:break-all;}
+  .recovery-warn{font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:8px;}
+  .auth-check-row{display:flex;align-items:flex-start;gap:8px;margin-top:14px;font-size:12px;color:var(--muted);line-height:1.4;text-align:left;}
+  .auth-check-row input{margin-top:2px;accent-color:var(--amber);width:15px;height:15px;flex-shrink:0;}
+
+  .auth-adv{margin-top:20px;border-top:1px solid var(--line);padding-top:6px;}
+  .auth-adv-toggle{display:flex;align-items:center;justify-content:space-between;padding:10px 2px;cursor:pointer;color:var(--muted);font-size:12.5px;user-select:none;}
+  .auth-adv-toggle:hover{color:var(--text);}
+  .auth-adv-arrow{transition:transform .2s;font-size:11px;}
+  .auth-adv-body{display:none;padding-top:4px;}
+  .auth-adv-body.open{display:block;animation:fade .2s ease;}
+  .auth-method{border:1px solid var(--line);background:var(--panel-2);border-radius:10px;padding:12px;margin:8px 0;}
+  .auth-method-title{font-weight:600;font-size:13px;margin-bottom:4px;display:flex;align-items:center;gap:6px;}
+  .auth-method-desc{font-size:11px;color:var(--muted);line-height:1.45;margin-bottom:10px;}
+  .auth-soon{font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);background:var(--panel);border:1px solid var(--line);padding:1px 6px;border-radius:20px;font-weight:600;}
+  .auth-note{font-size:11px;color:var(--muted);line-height:1.55;margin-top:16px;text-align:center;}
+  .auth-step-dots{display:flex;justify-content:center;gap:6px;margin-bottom:18px;}
+  .auth-step-dot{width:6px;height:6px;border-radius:50%;background:var(--line);}
+  .auth-step-dot.active{background:var(--amber);width:16px;border-radius:4px;}
+  @media(max-width:720px){.mode-grid,.finance-summary,.stat-grid{grid-template-columns:1fr;} .main-inner{padding:24px 18px;} .topbar{padding:12px 18px;} .sidebar{width:180px;}}
+</style>
+</head>
+<body>
+
+<div class="auth-lock" id="authLock">
+  <div class="auth-glow"></div>
+  <div class="auth-card" id="authCard">
+    <!-- filled dynamically by renderAuthGate() -->
+  </div>
+</div>
+
+<div class="app" id="appRoot">
+<div class="sidebar">
+<div class="brand">Личный <span>штаб</span></div>
+<div class="nav-item active" data-view="today"><span class="nav-num">00</span>Сегодня</div>
+<div class="nav-item" data-view="plans"><span class="nav-num">01</span>Планы</div>
+<div class="nav-item" data-view="achievements"><span class="nav-num">02</span>Достижения</div>
+<div class="nav-item" data-view="analysis"><span class="nav-num">03</span>Анализ</div>
+<div class="nav-item" data-view="finance"><span class="nav-num">04</span>Финансы</div>
+<div class="nav-item" data-view="cabinet"><span class="nav-num">05</span>Личный кабинет</div>
+<div class="nav-item" data-view="access"><span class="nav-num">06</span>Доступ</div>
+
+<div class="theme-toggle" id="themeToggle" onclick="toggleTheme()">🌙 Тёмная тема</div>
+</div>
+
+<main>
+<div class="topbar">
+<div class="topbar-clock">
+<div id="clockTime">--:--:--</div>
+<div class="date" id="clockDate">--.--.----</div>
+</div>
+<div class="topbar-deadline">
+<div class="topbar-deadline-label" id="widgetLabel">Ближайший дедлайн</div>
+<div class="topbar-deadline-value" id="widgetValue">—</div>
+</div>
+</div>
+
+<div class="main-inner">
+<!-- TODAY -->
+<div class="view active" id="view-today">
+<h1>Сегодня</h1>
+<div class="subtitle">3 главные вещи на сегодня. Не больше — это и есть весь смысл.</div>
+<div class="today-date" id="todayDate"></div>
+<div class="card">
+<div id="checkinList"></div>
+</div>
+</div>
+
+<!-- PLANS -->
+<div class="view" id="view-plans">
+<h1>Планы</h1>
+<div class="subtitle">Что задумано — категория любая, вписывайте своё</div>
+<div class="row">
+<input id="planTitle" placeholder="Что нужно сделать" style="flex:2;min-width:200px;">
+<input id="planCat" list="tagOptions" placeholder="Категория (например: Работа)" style="width:180px;">
+<input id="planDate" type="date">
+<button onclick="addPlan()">Добавить</button>
+</div>
+<datalist id="tagOptions"></datalist>
+<div class="filter-row">
+<select id="planFilter" onchange="renderPlans()"><option value="all">Все категории</option></select>
+</div>
+<div class="ledger" id="plansList"></div>
+</div>
+
+<!-- ACHIEVEMENTS -->
+<div class="view" id="view-achievements">
+<h1>Достижения</h1>
+<div class="subtitle">Что получилось, что нет — по датам</div>
+<div class="row">
+<input id="achTitle" placeholder="Что произошло" style="flex:2;min-width:200px;">
+<input id="achCat" list="tagOptions" placeholder="Категория" style="width:150px;">
+<select id="achStatus">
+<option value="done">Получилось</option>
+<option value="fail">Не получилось</option>
+<option value="progress">В процессе</option>
+</select>
+<button onclick="addAchievement()">Добавить</button>
+</div>
+<div class="filter-row">
+<select id="achFilterCat" onchange="renderAch()"><option value="all">Все категории</option></select>
+<select id="achFilterStatus" onchange="renderAch()">
+<option value="all">Любой статус</option>
+<option value="done">Получилось</option>
+<option value="fail">Не получилось</option>
+<option value="progress">В процессе</option>
+</select>
+</div>
+<div class="ledger" id="achList"></div>
+</div>
+
+<!-- ANALYSIS -->
+<div class="view" id="view-analysis">
+<h1>Анализ</h1>
+<div class="subtitle">Считается автоматически из ваших планов, достижений и финансов</div>
+<div class="stat-grid" id="statGrid"></div>
+<div class="card">
+<div class="card-title">По направлениям</div>
+<div id="barChart"></div>
+</div>
+<div class="card">
+<div class="card-title">Финансовые цели</div>
+<div id="financeAnalysis"></div>
+</div>
+</div>
+
+<!-- FINANCE -->
+<div class="view" id="view-finance">
+<h1>Финансы</h1>
+<div class="subtitle">Система подстраивает дневной взнос под твой реальный темп: нормально, тяжело или можешь больше.</div>
+<div class="row">
+<input id="goalName" placeholder="Название цели" style="flex:2;min-width:160px;">
+<input id="goalTarget" type="number" placeholder="Сумма цели, сум" style="width:150px;">
+<input id="goalCurrent" type="number" placeholder="Уже есть" style="width:120px;">
+<input id="goalDate" type="date">
+<button onclick="addGoal()">Добавить цель</button>
+</div>
+<div id="goalsList"></div>
+</div>
+
+<!-- CABINET -->
+<div class="view" id="view-cabinet">
+<h1>Личный кабинет</h1>
+<div class="subtitle">Основная информация о вас</div>
+<div class="card">
+<div class="card-title">Профиль</div>
+<div class="kv"><span class="k">Свободное время в день</span><input id="freeTimeInput" placeholder="напр. 30-60 мин" onchange="saveFreeTime()"></div>
+<div class="kv"><span class="k">Всего планов</span><span id="cabPlanCount">0</span></div>
+<div class="kv"><span class="k">Всего достижений</span><span id="cabAchCount">0</span></div>
+</div>
+<div class="card">
+<div class="card-title">Активные направления</div>
+<div class="chips" id="cabDirections"></div>
+</div>
+<div class="card">
+<div class="card-title">Заметка</div>
+<textarea id="cabinetNote" rows="4" placeholder="Свободные мысли, идеи..." style="width:100%;" onchange="saveNote()"></textarea>
+</div>
+</div>
+
+<!-- ACCESS -->
+<div class="view" id="view-access">
+<h1>Настройка доступа</h1>
+<div class="subtitle">Кому и что можно показать</div>
+<div class="warn">⚠️ Реальную защиту входа паролем сюда пока не добавлял — простой пароль в коде страницы не даёт настоящей приватности. Для реальных чувствительных данных, особенно паролей от сервисов, используйте отдельный менеджер паролей.</div>
+<div class="card">
+<div class="card-title">Где хранить настоящие пароли</div>
+<div style="font-size:13px;color:var(--muted);line-height:1.6;">
+          Рекомендуется: Bitwarden, 1Password или встроенный менеджер паролей браузера. Здесь можно оставить только пометку "где искать", без самих паролей.
+</div>
+</div>
+<div class="card">
+<div class="card-title">Биометрия</div><div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:10px;">После входа через Telegram можно привязать отпечаток / Face ID / Windows Hello к этому устройству.</div><button onclick="registerPasskey()">🔐 Привязать биометрию</button><div id="passkeyStatus" class="auth-status"></div>
+</div>
+<div class="card">
+<div class="card-title">Заметка о доступах (без реальных паролей)</div>
+<textarea id="accessNote" rows="3" placeholder="Например: пароли в Bitwarden, папка 'Штаб'" style="width:100%;" onchange="saveAccessNote()"></textarea>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+<script src="https://unpkg.com/@simplewebauthn/browser@13.3.0/dist/bundle/index.umd.min.js"></script>
+<script>
+const MIN_DAILY = 10000;
+const MAX_DAILY = 100000;
+
+let plans = [];
+let achievements = [];
+let goals = [];
+let checkin = [];
+let planFilterVal = 'all';
+let achFilterCatVal = 'all';
+let achFilterStatusVal = 'all';
+
+const SAMPLE_PLANS = [
+  {id:1, title:'Записаться на теорию по вождению', cat:'Права', date:'2026-09-01'},
+  {id:2, title:'Отложить деньги на свадьбу', cat:'Свадьба', date:'2026-08-31'},
+  {id:3, title:'Найти курс по бизнесу', cat:'Бизнес', date:''}
+];
+const SAMPLE_ACH = [
+  {id:1, title:'Выложил видео по CS', cat:'CS-контент', status:'done', date:'2026-08-17'},
+  {id:2, title:'Не успел позаниматься по курсу', cat:'Курсы', status:'fail', date:'2026-08-16'},
+  {id:3, title:'Начал откладывать на права', cat:'Права', status:'progress', date:'2026-08-15'}
+];
+const SAMPLE_GOALS = [
+  {id:1, name:'Свадьба', target:20000000, current:800000, targetDate:'2027-03-01'},
+  {id:2, name:'Закрыть кредит', target:5000000, current:500000, targetDate:'2026-12-01'},
+  {id:3, name:'Автошкола', target:1500000, current:150000, targetDate:'2026-10-15'}
+];
+
+document.querySelectorAll('.nav-item').forEach(item=>{
+  item.addEventListener('click', ()=>{
+    document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    item.classList.add('active');
+    document.getElementById('view-'+item.dataset.view).classList.add('active');
+    if(item.dataset.view==='analysis') renderAnalysis();
+    if(item.dataset.view==='cabinet') renderCabinet();
+  });
+});
+
+/* ---------- storage (non-blocking) ---------- */
+async function load(key, fallback){
+  try{
+    if(window.storage && typeof window.storage.get === 'function'){
+      const r = await window.storage.get(key, false);
+      if(r) return JSON.parse(r.value);
+    }
+  }catch(e){}
+  try{
+    const raw = localStorage.getItem('lichnyShtab:'+key);
+    return raw !== null ? JSON.parse(raw) : fallback;
+  }catch(e){ return fallback; }
+}
+function save(key, value){
+  const serialized = JSON.stringify(value);
+  try{
+    if(window.storage && typeof window.storage.set === 'function'){
+      window.storage.set(key, serialized, false).catch(()=>{});
+    }
+  }catch(e){}
+  try{ localStorage.setItem('lichnyShtab:'+key, serialized); }catch(e){}
+}
+
+function todayStr(){
+  const d=new Date();
+  const pad=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+
+/* ---------- THEME ---------- */
+async function toggleTheme(){
+  const current = document.body.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  const next = current === 'light' ? 'dark' : 'light';
+  applyTheme(next);
+  save('theme', next);
+}
+function applyTheme(theme){
+  if(theme === 'light'){
+    document.body.setAttribute('data-theme','light');
+    document.getElementById('themeToggle').textContent = '☀️ Светлая тема';
+  } else {
+    document.body.removeAttribute('data-theme');
+    document.getElementById('themeToggle').textContent = '🌙 Тёмная тема';
+  }
+}
+
+/* ---------- TOPBAR CLOCK ---------- */
+function updateClock(){
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById('clockTime').textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  document.getElementById('clockDate').textContent = `${pad(now.getDate())}.${pad(now.getMonth()+1)}.${now.getFullYear()}`;
+}
+
+/* ---------- TODAY CHECK-IN ---------- */
+async function loadCheckin(){
+  checkin = await load('checkin:'+todayStr(), [
+    {text:'', done:false},{text:'', done:false},{text:'', done:false}
+  ]);
+}
+function renderCheckin(){
+  document.getElementById('todayDate').textContent = new Date().toLocaleDateString('ru-RU', {weekday:'long', day:'numeric', month:'long'});
+  const el = document.getElementById('checkinList');
+   el.innerHTML = checkin.map((c,i)=>` 
+    <div class="checkin-item ${c.done?'done':''}">
+      <span class="checkin-num">${i+1}</span>
+      <input type="checkbox" ${c.done?'checked':''} onchange="toggleCheckin(${i})">
+      <input type="text" value="${escapeHtml(c.text)}" placeholder="Дело №${i+1}..." oninput="editCheckin(${i}, this.value)">
+    </div>
+  `).join('');
+}
+function toggleCheckin(i){
+  checkin[i].done = !checkin[i].done;
+  save('checkin:'+todayStr(), checkin);
+  renderCheckin();
+}
+let checkinTimer=null;
+function editCheckin(i, val){
+  checkin[i].text = val;
+  clearTimeout(checkinTimer);
+  checkinTimer = setTimeout(()=>save('checkin:'+todayStr(), checkin), 400);
+}
+
+/* ---------- TAGS ---------- */
+function getAllTags(){
+  const set = new Set();
+  plans.forEach(p=>{ if(p.cat) set.add(p.cat); });
+  achievements.forEach(a=>{ if(a.cat) set.add(a.cat); });
+  return Array.from(set);
+}
+function updateTagOptions(){
+  const tags = getAllTags();
+  document.getElementById('tagOptions').innerHTML = tags.map(t=>`<option value="${escapeHtml(t)}">`).join('');
+
+  const planFilter = document.getElementById('planFilter');
+  planFilter.innerHTML = '<option value="all">Все категории</option>' + tags.map(t=>`<option value="${escapeHtml(t)}" ${t===planFilterVal?'selected':''}>${escapeHtml(t)}</option>`).join('');
+
+  const achFilter = document.getElementById('achFilterCat');
+  achFilter.innerHTML = '<option value="all">Все категории</option>' + tags.map(t=>`<option value="${escapeHtml(t)}" ${t===achFilterCatVal?'selected':''}>${escapeHtml(t)}</option>`).join('');
+}
+
+/* ---------- PLANS ---------- */
+function addPlan(){
+  const titleEl = document.getElementById('planTitle');
+  const title = titleEl.value.trim();
+  if(!title) return;
+  const cat = document.getElementById('planCat').value.trim() || 'Без категории';
+  const date = document.getElementById('planDate').value || '';
+  plans.unshift({id:Date.now(), title, cat, date});
+  titleEl.value='';
+  document.getElementById('planCat').value='';
+  document.getElementById('planDate').value='';
+  save('plans', plans);
+  renderPlans();
+  updateTagOptions();
+  renderWidget();
+}
+function delPlan(id){
+  plans = plans.filter(p=>p.id!==id);
+  save('plans', plans);
+  renderPlans();
+  updateTagOptions();
+  renderWidget();
+}
+function renderPlans(){
+  planFilterVal = document.getElementById('planFilter').value || 'all';
+  const list = planFilterVal==='all' ? plans : plans.filter(p=>p.cat===planFilterVal);
+  const el = document.getElementById('plansList');
+  if(list.length===0){ el.innerHTML = '<div class="empty">Ничего нет. Добавьте план выше или смените фильтр.</div>'; return; }
+   el.innerHTML = list.map(p=>` 
+    <div class="entry">
+      <div class="entry-date">${p.date || '—'}</div>
+      <div class="entry-body">
+        <div class="entry-title">${escapeHtml(p.title)}</div>
+        <div class="entry-meta"><span class="tag">${escapeHtml(p.cat)}</span></div>
+      </div>
+      <div class="del" onclick="delPlan(${p.id})">удалить</div>
+    </div>
+  `).join('');
+}
+
+/* ---------- ACHIEVEMENTS ---------- */
+function addAchievement(){
+  const titleEl = document.getElementById('achTitle');
+  const title = titleEl.value.trim();
+  if(!title) return;
+  const cat = document.getElementById('achCat').value.trim() || 'Без категории';
+  const status = document.getElementById('achStatus').value;
+  const date = todayStr();
+  achievements.unshift({id:Date.now(), title, cat, status, date});
+  titleEl.value='';
+  document.getElementById('achCat').value='';
+  save('achievements', achievements);
+  renderAch();
+  updateTagOptions();
+  renderWidget();
+}
+function delAch(id){
+  achievements = achievements.filter(a=>a.id!==id);
+  save('achievements', achievements);
+  renderAch();
+  updateTagOptions();
+  renderWidget();
+}
+function statusLabel(s){ return s==='done'?'Получилось':s==='fail'?'Не получилось':'В процессе'; }
+function renderAch(){
+  achFilterCatVal = document.getElementById('achFilterCat').value || 'all';
+  achFilterStatusVal = document.getElementById('achFilterStatus').value || 'all';
+  let list = achievements;
+  if(achFilterCatVal!=='all') list = list.filter(a=>a.cat===achFilterCatVal);
+  if(achFilterStatusVal!=='all') list = list.filter(a=>a.status===achFilterStatusVal);
+  const el = document.getElementById('achList');
+  if(list.length===0){ el.innerHTML = '<div class="empty">Ничего нет. Добавьте запись выше или смените фильтр.</div>'; return; }
+   el.innerHTML = list.map(a=>` 
+    <div class="entry">
+      <div class="entry-date">${a.date}</div>
+      <div class="entry-body">
+        <div class="entry-title">${escapeHtml(a.title)}</div>
+        <div class="entry-meta"><span class="tag">${escapeHtml(a.cat)}</span><span class="tag status-${a.status}">${statusLabel(a.status)}</span></div>
+      </div>
+      <div class="del" onclick="delAch(${a.id})">удалить</div>
+    </div>
+  `).join('');
+}
+
+/* ---------- ANALYSIS ---------- */
+function renderAnalysis(){
+  const done = achievements.filter(a=>a.status==='done').length;
+  const total = achievements.length;
+  const rate = total ? Math.round(done/total*100) : 0;
+
+   document.getElementById('statGrid').innerHTML = ` 
+    <div class="stat-card"><div class="stat-num">${plans.length}</div><div class="stat-label">Активных планов</div></div>
+    <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">Всего отметок</div></div>
+    <div class="stat-card"><div class="stat-num">${rate}%</div><div class="stat-label">Доля "получилось"</div></div>
+  `;
+
+  const tags = getAllTags();
+  const counts = tags.map(t => ({
+    tag:t,
+    count: plans.filter(p=>p.cat===t).length + achievements.filter(a=>a.cat===t).length
+  })).sort((a,b)=>b.count-a.count);
+
+  const barEl = document.getElementById('barChart');
+  if(counts.length===0){
+    barEl.innerHTML = '<div class="empty">Пока нет данных — добавьте планы или достижения с категориями.</div>';
+  } else {
+    const maxCount = Math.max(1, ...counts.map(c=>c.count));
+    barEl.innerHTML = counts.map(c=>{
+      const pct = Math.round(c.count/maxCount*100);
+      return `<div class="bar-row">
+        <div class="bar-label">${escapeHtml(c.tag)}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+        <div class="bar-val">${c.count}</div>
+      </div>`;
+    }).join('');
+  }
+
+  const finEl = document.getElementById('financeAnalysis');
+  if(goals.length===0){
+    finEl.innerHTML = '<div class="empty">Пока нет финансовых целей.</div>';
+  } else {
+    finEl.innerHTML = goals.map(g=>{
+      const pct = Math.min(100, Math.round(g.current/g.target*100));
+      return `<div class="bar-row">
+        <div class="bar-label">${escapeHtml(g.name)}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+        <div class="bar-val">${pct}%</div>
+      </div>`;
+    }).join('');
+  }
+}
+
+/* ---------- FINANCE ---------- */
+function daysLeftForGoal(g){
+  const today = new Date(); today.setHours(0,0,0,0);
+  if(!g.targetDate) return 1;
+  const td = new Date(g.targetDate+'T00:00:00'); td.setHours(0,0,0,0);
+  return Math.max(1, Math.ceil((td-today)/86400000));
+}
+function clamp(n,min,max){ return Math.min(max,Math.max(min,n)); }
+function normalizeGoal(g){
+  if(!Array.isArray(g.contributions)) g.contributions=[];
+  g.target=Number(g.target)||0; g.current=Number(g.current)||0;
+  return g;
+}
+function calcGoalPlan(g){
+  normalizeGoal(g);
+  const daysLeft=daysLeftForGoal(g);
+  const remaining=Math.max(0,g.target-g.current);
+  let base=daysLeft>0?remaining/daysLeft:remaining;
+  if(remaining===0) base=0;
+  const rec=remaining===0?0:Math.round(clamp(base,MIN_DAILY,MAX_DAILY));
+  return {daysLeft,remaining,base,rec};
+}
+function calcModes(g){
+  const {remaining,rec}=calcGoalPlan(g);
+  if(remaining<=0) return {normal:0,heavy:0,more:0};
+  const normal=Math.min(rec,remaining);
+  const heavy=Math.min(remaining,Math.round(clamp(Math.min(rec*0.45,20000),MIN_DAILY,20000)));
+  let more=Math.round(rec*1.25);
+  if(more<=rec) more=rec+MIN_DAILY;
+  more=Math.min(MAX_DAILY,more,remaining);
+  return {normal,heavy,more};
+}
+function fmtSum(n){ return Math.round(n).toLocaleString('ru-RU')+' сум'; }
+function modeLabel(mode){ return mode==='normal'?'😊 Нормально':mode==='heavy'?'😓 Сегодня тяжело':'🔥 Могу больше'; }
+function addContribution(id,mode){
+  const g=goals.find(x=>x.id===id); if(!g) return;
+  normalizeGoal(g);
+  const modes=calcModes(g), amount=modes[mode]; if(!amount) return;
+  const planned=calcGoalPlan(g).rec;
+  g.contributions.push({id:Date.now(),date:todayStr(),planned,amount,mode});
+  g.current=Math.min(g.target,g.current+amount);
+  save('goals',goals); renderGoals(); renderAnalysis();
+}
+function updateGoalCurrent(id,val){
+  const g=goals.find(x=>x.id===id); if(!g) return;
+  normalizeGoal(g); g.current=clamp(parseFloat(val)||0,0,g.target);
+  save('goals',goals); renderGoals(); renderAnalysis();
+}
+function delGoal(id){ goals=goals.filter(g=>g.id!==id); save('goals',goals); renderGoals(); renderAnalysis(); }
+function renderContributionHistory(g){
+  normalizeGoal(g);
+  if(!g.contributions.length) return '<div class="empty" style="padding:8px 0 0;">История взносов пока пустая.</div>';
+  const rows=[...g.contributions].reverse().slice(0,5).map(c=>{
+    const delta=(Number(c.amount)||0)-(Number(c.planned)||0), sign=delta>0?'+':delta<0?'':'';
+    return `<div class="history-row"><div>${c.date} <span class="mode-chip">${modeLabel(c.mode)}</span></div><div class="history-right">${fmtSum(c.amount)} <span style="color:${delta>=0?'var(--teal)':'var(--red)'}">(${sign}${fmtSum(delta)})</span></div></div>`;
+  }).join('');
+  const all=[...g.contributions].reverse().map((c,i)=>{
+    const delta=(Number(c.amount)||0)-(Number(c.planned)||0), sign=delta>0?'+':delta<0?'':'';
+    return `<div class="history-detail"><div class="history-date">${c.date}</div><div><div><span class="mode-chip">${modeLabel(c.mode)}</span></div><div class="history-plan">План: ${fmtSum(c.planned)}</div></div><div class="history-amount" style="color:${delta>=0?'var(--teal)':'var(--red)'}">${fmtSum(c.amount)}<br><span style="font-size:10px;color:var(--muted)">${sign}${fmtSum(delta)}</span></div></div>`;
+  }).join('');
+  const key='hist_'+g.id;
+  return `<div class="history"><div class="card-title">Последние взносы</div>${rows}<div class="history-actions"><span style="font-size:11px;color:var(--muted)">${g.contributions.length} ${g.contributions.length===1?'взнос':'взносов'} всего</span><button class="history-btn" onclick="toggleHistory('${key}', this)">Открыть всю историю</button></div><div class="history-full" id="${key}">${all}</div></div>`;
+}
+function toggleHistory(id,btn){
+  const el=document.getElementById(id); if(!el) return;
+  const open=el.classList.toggle('open');
+  btn.textContent=open?'Скрыть историю':'Открыть всю историю';
+}
+function renderGoals(){
+  const el=document.getElementById('goalsList');
+  if(goals.length===0){el.innerHTML='<div class="empty">Пока нет целей. Добавьте первую выше — например «Свадьба» или «Закрыть кредит».</div>';return;}
+  goals.forEach(normalizeGoal);
+  el.innerHTML=goals.map(g=>{
+    const pct=g.target?Math.min(100,Math.round(g.current/g.target*100)):0;
+    const {daysLeft,remaining,rec}=calcGoalPlan(g), modes=calcModes(g);
+    const dateLabel=g.targetDate?new Date(g.targetDate+'T00:00:00').toLocaleDateString('ru-RU'):'без даты';
+    const totalPlanned=g.contributions.reduce((a,c)=>a+(Number(c.planned)||0),0);
+    const totalActual=g.contributions.reduce((a,c)=>a+(Number(c.amount)||0),0);
+    const diff=totalActual-totalPlanned;
+    const contributionCount=g.contributions.length?`Взносов: ${g.contributions.length}`:'';
+    const modeHtml=remaining>0?`<div class="mode-grid">
+      <div class="mode-card"><div class="mode-title">😊 Нормально</div><div class="mode-desc">Идём по обычному плану.</div><div class="mode-amount">${fmtSum(modes.normal)}</div><button class="small" onclick="addContribution(${g.id},'normal')">Внести</button></div>
+      <div class="mode-card"><div class="mode-title">😓 Сегодня тяжело</div><div class="mode-desc">Меньше сегодня — разница автоматически распределится на будущие дни.</div><div class="mode-amount">${fmtSum(modes.heavy)}</div><button class="small" onclick="addContribution(${g.id},'heavy')">Внести</button></div>
+      <div class="mode-card"><div class="mode-title">🔥 Могу больше</div><div class="mode-desc">Больше сегодня — будущая дневная нагрузка станет ниже.</div><div class="mode-amount">${fmtSum(modes.more)}</div><button class="small" onclick="addContribution(${g.id},'more')">Внести</button></div>
+    </div>`:'<div class="info">Цель достигнута 🎉</div>';
+    const historyTotals=g.contributions.length?`<div class="goal-info-row" style="margin-top:10px;"><span>По истории: ${fmtSum(totalActual)}</span><span>Отклонение: ${diff>=0?'+':''}${fmtSum(diff)}</span></div>`:'';
+    return `<div class="goal-card">
+      <div class="goal-head"><div class="goal-name">${escapeHtml(g.name)}</div><div class="goal-nums">${fmtSum(g.current)} / ${fmtSum(g.target)}</div></div>
+      <div class="goal-track"><div class="goal-fill" style="width:${pct}%"></div></div>
+      <div class="finance-summary">
+        <div class="finance-mini"><div class="n">${pct}%</div><div class="l">Выполнено</div></div>
+        <div class="finance-mini"><div class="n">${daysLeft}</div><div class="l">Дней осталось</div></div>
+        <div class="finance-mini"><div class="n">${fmtSum(remaining)}</div><div class="l">Осталось</div></div>
+        <div class="finance-mini"><div class="n">${fmtSum(rec)}</div><div class="l">Обычный план сегодня</div></div>
+      </div>
+      <div class="goal-info-row"><span>Цель: ${dateLabel}</span><span>${contributionCount}</span></div>
+      ${modeHtml}
+      ${historyTotals}
+      ${renderContributionHistory(g)}
+      <div class="goal-foot"><div class="goal-pct">Текущая сумма: ${fmtSum(g.current)}</div><div class="goal-edit"><input type="number" placeholder="Изменить сумму" onchange="updateGoalCurrent(${g.id}, this.value)"><button class="icon-del" onclick="delGoal(${g.id})">удалить</button></div></div>
+    </div>`;
+  }).join('');
+}
+function addGoal(){
+  const name=document.getElementById('goalName').value.trim();
+  const target=parseFloat(document.getElementById('goalTarget').value);
+  const current=parseFloat(document.getElementById('goalCurrent').value)||0;
+  const targetDate=document.getElementById('goalDate').value||'';
+  if(!name||!target||target<=0) return;
+  goals.unshift({id:Date.now(),name,target,current:Math.min(current,target),targetDate,contributions:[]});
+  document.getElementById('goalName').value='';document.getElementById('goalTarget').value='';document.getElementById('goalCurrent').value='';document.getElementById('goalDate').value='';
+  save('goals',goals);renderGoals();renderAnalysis();
+}
+
+/* ---------- CABINET ---------- */
+async function renderCabinet(){
+  document.getElementById('cabPlanCount').textContent = plans.length;
+  document.getElementById('cabAchCount').textContent = achievements.length;
+  const note = await load('cabinetNote', '');
+  document.getElementById('cabinetNote').value = note;
+  const freeTime = await load('freeTime', '');
+  document.getElementById('freeTimeInput').value = freeTime;
+
+  const tags = getAllTags();
+  const dirEl = document.getElementById('cabDirections');
+  dirEl.innerHTML = tags.length
+    ? tags.map(t=>`<span class="tag">${escapeHtml(t)}</span>`).join('')
+    : '<span style="color:var(--muted);font-size:13px;">Пока нет — появятся, когда добавите планы/достижения с категориями.</span>';
+}
+function saveNote(){ save('cabinetNote', document.getElementById('cabinetNote').value); }
+function saveFreeTime(){ save('freeTime', document.getElementById('freeTimeInput').value); }
+function saveAccessNote(){ save('accessNote', document.getElementById('accessNote').value); }
+
+/* ---------- TOPBAR DEADLINE ---------- */
+function renderWidget(){
+  const today = todayStr();
+  const upcoming = plans.filter(p=>p.date && p.date >= today).sort((a,b)=>a.date.localeCompare(b.date));
+  if(upcoming.length>0){
+    document.getElementById('widgetLabel').textContent = 'Ближайший дедлайн';
+    document.getElementById('widgetValue').textContent = `${upcoming[0].date} — ${upcoming[0].title}`;
+  } else {
+    const weekAgo = Date.now() - 7*24*60*60*1000;
+    const count = plans.filter(p=>p.id>=weekAgo).length + achievements.filter(a=>a.id>=weekAgo).length;
+    document.getElementById('widgetLabel').textContent = 'Активность за 7 дней';
+    document.getElementById('widgetValue').textContent = count + ' записей (планы + достижения)';
+  }
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+/* ================= ACCESS GATE (local one-time/recovery code) =================
+   Пока нет сервера (server.js) — реальная проверка Telegram/QR/Passkey недоступна.
+   Вместо "дырявой" заглушки делаем рабочую локальную защиту кодом:
+   - при первом запуске пользователь придумывает код доступа (6 цифр)
+   - выдаётся ОДНОРАЗОВЫЙ код восстановления (на случай, если забыт основной)
+   - код хранится не в открытом виде, а в виде SHA-256 хэша
+   - разблокировка держится на время сессии вкладки (sessionStorage)
+   Когда будет готов server.js с Telegram-ботом — методы ниже (Telegram/QR/Passkey)
+   заработают сами по себе, интерфейс для них уже на месте.
+================================================================== */
+const AUTH_SESSION_KEY = 'shtabUnlocked';
+let authState = { mode:'loading', step:1, pendingCode:'', newCode:'', recoveryCode:'' };
+
+async function sha256Hex(str){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function randomRecoveryCode(){
+  const chars='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  const arr=new Uint32Array(10); crypto.getRandomValues(arr);
+  return Array.from(arr).map(n=>chars[n%chars.length]).join('').replace(/(.{5})/,'$1-');
+}
+function setAuthStatus(msg, isErr){
+  const el=document.getElementById('authStatus'); if(!el) return;
+  el.textContent=msg||''; el.classList.toggle('err', !!isErr);
+}
+function otpBoxesHtml(id, len){
+  let h='';
+  for(let i=0;i<len;i++) h+=`<input class="otp-box" id="${id}-${i}" maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code">`;
+  return h;
+}
+function wireOtpRow(id, len, onComplete){
+  const boxes=[...Array(len)].map((_,i)=>document.getElementById(`${id}-${i}`));
+  boxes.forEach((box,i)=>{
+    box.addEventListener('input', ()=>{
+      box.value = box.value.replace(/[^0-9]/g,'').slice(-1);
+      if(box.value && i<len-1) boxes[i+1].focus();
+      const val = boxes.map(b=>b.value).join('');
+      if(val.length===len) onComplete(val);
+    });
+    box.addEventListener('keydown', e=>{
+      if(e.key==='Backspace' && !box.value && i>0) boxes[i-1].focus();
+    });
+    box.addEventListener('paste', e=>{
+      e.preventDefault();
+      const text=(e.clipboardData.getData('text')||'').replace(/[^0-9]/g,'').slice(0,len);
+      text.split('').forEach((ch,idx)=>{ if(boxes[idx]) boxes[idx].value=ch; });
+      if(text.length) boxes[Math.min(text.length,len)-1].focus();
+      if(text.length===len) onComplete(text);
+    });
+  });
+  if(boxes[0]) setTimeout(()=>boxes[0].focus(), 60);
+}
+function shakeOtpRow(id){
+  const row=document.getElementById(id+'-row');
+  if(!row) return;
+  row.classList.add('shake');
+  setTimeout(()=>row.classList.remove('shake'), 380);
+}
+function clearOtpRow(id, len){
+  for(let i=0;i<len;i++){ const b=document.getElementById(`${id}-${i}`); if(b) b.value=''; }
+  const first=document.getElementById(id+'-0'); if(first) first.focus();
+}
+
+function advancedMethodsHtml(){
+  return `
+  <div class="auth-adv">
+    <div class="auth-adv-toggle" onclick="toggleAdvAuth()">
+      <span>Другие способы входа (Telegram / Passkey)</span>
+      <span class="auth-adv-arrow" id="authAdvArrow">▾</span>
+    </div>
+    <div class="auth-adv-body" id="authAdvBody">
+      <div class="auth-method">
+        <div class="auth-method-title">🔐 Отпечаток / Face ID / Windows Hello <span class="auth-soon">после server.js</span></div>
+        <div class="auth-method-desc">Passkey/WebAuthn. Заработает, когда будет запущен серверный бэкенд.</div>
+        <button class="small" style="width:100%;" onclick="startPasskeyLogin()">Войти по биометрии</button>
+      </div>
+      <div class="auth-method">
+        <div class="auth-method-title">📱 Telegram-бот <span class="auth-soon">после server.js</span></div>
+        <div class="auth-method-desc">Вход через ваш Telegram-аккаунт, бот подтверждает доступ.</div>
+        <button class="small" style="width:100%;" onclick="startTelegramLogin()">Войти через Telegram</button>
+      </div>
+      <div class="auth-method">
+        <div class="auth-method-title">▣ QR-код <span class="auth-soon">после server.js</span></div>
+        <div class="auth-method-desc">Сканируете QR телефоном, бот подтверждает сессию на этом устройстве.</div>
+        <button class="small" style="width:100%;" onclick="startQrLogin()">Показать QR</button>
+      </div>
+    </div>
+  </div>`;
+}
+function toggleAdvAuth(){
+  const body=document.getElementById('authAdvBody');
+  const arrow=document.getElementById('authAdvArrow');
+  const open=body.classList.toggle('open');
+  arrow.style.transform = open?'rotate(180deg)':'rotate(0deg)';
+}
+
+async function renderAuthGate(){
+  const card=document.getElementById('authCard');
+  const auth = await load('accessAuth', null);
+
+  if(sessionStorage.getItem(AUTH_SESSION_KEY)==='1' && auth){
+    unlockApp(auth.phone||''); return;
+  }
+
+  if(!auth){
+    authState = {mode:'setup', step:1, pendingCode:'', newCode:'', recoveryCode:''};
+    renderSetupStep(); return;
+  }
+
+  card.innerHTML = `
+    <div class="auth-badge">🔒</div>
+    <h2>С возвращением</h2>
+    <div class="auth-sub">Введите код доступа, чтобы открыть <b>Личный штаб</b>.</div>
+    <div class="otp-row" id="loginOtp-row">${otpBoxesHtml('loginOtp',6)}</div>
+    <div class="auth-status" id="authStatus"></div>
+    <div class="auth-link" onclick="startRecoveryFlow()">Забыли код? Использовать код восстановления</div>
+    ${advancedMethodsHtml()}
+    <div class="auth-note">Код хранится на этом устройстве в виде хэша, а не в открытом виде. Для полноценной защиты со всех устройств позже подключите Telegram-бота через server.js.</div>
+  `;
+  wireOtpRow('loginOtp', 6, async (val)=>{
+    const hash = await sha256Hex(val);
+    if(hash === auth.codeHash){
+      sessionStorage.setItem(AUTH_SESSION_KEY,'1');
+      setAuthStatus('Доступ подтверждён ✓');
+      setTimeout(()=>unlockApp(''), 250);
+    } else {
+      setAuthStatus('Неверный код', true);
+      shakeOtpRow('loginOtp');
+      clearOtpRow('loginOtp',6);
+    }
+  });
+}
+
+function renderSetupStep(){
+  const card=document.getElementById('authCard');
+  if(authState.step===1){
+    card.innerHTML = `
+      <div class="auth-badge">✦</div>
+      <h2>Придумайте код</h2>
+      <div class="auth-sub">6 цифр — этим кодом вы будете открывать «Личный штаб» на этом устройстве.</div>
+      <div class="auth-step-dots"><span class="auth-step-dot active"></span><span class="auth-step-dot"></span><span class="auth-step-dot"></span></div>
+      <div class="otp-row" id="setupOtp-row">${otpBoxesHtml('setupOtp',6)}</div>
+      <div class="auth-status" id="authStatus"></div>
+      <button class="auth-ghost-btn" onclick="demoUnlock()">Пропустить (демо-режим, без защиты)</button>
+    `;
+    wireOtpRow('setupOtp', 6, (val)=>{
+      authState.pendingCode = val;
+      authState.step = 2;
+      renderSetupStep();
+    });
+    return;
+  }
+  if(authState.step===2){
+    card.innerHTML = `
+      <div class="auth-badge">✦</div>
+      <h2>Повторите код</h2>
+      <div class="auth-sub">Ещё раз введите те же 6 цифр для подтверждения.</div>
+      <div class="auth-step-dots"><span class="auth-step-dot active"></span><span class="auth-step-dot active"></span><span class="auth-step-dot"></span></div>
+      <div class="otp-row" id="confirmOtp-row">${otpBoxesHtml('confirmOtp',6)}</div>
+      <div class="auth-status" id="authStatus"></div>
+      <div class="auth-link" onclick="authState.step=1; renderSetupStep();">← Назад</div>
+    `;
+    wireOtpRow('confirmOtp', 6, (val)=>{
+      if(val !== authState.pendingCode){
+        setAuthStatus('Коды не совпадают, попробуйте снова', true);
+        shakeOtpRow('confirmOtp');
+        clearOtpRow('confirmOtp',6);
+        return;
+      }
+      authState.newCode = val;
+      authState.recoveryCode = randomRecoveryCode();
+      authState.step = 3;
+      renderSetupStep();
+    });
+    return;
+  }
+  if(authState.step===3){
+    card.innerHTML = `
+      <div class="auth-badge">🗝️</div>
+      <h2>Код восстановления</h2>
+      <div class="auth-sub">Сохраните этот одноразовый код в надёжном месте (менеджер паролей, заметки). Он поможет войти, если вы забудете основной код. Показывается только один раз.</div>
+      <div class="auth-step-dots"><span class="auth-step-dot active"></span><span class="auth-step-dot active"></span><span class="auth-step-dot active"></span></div>
+      <div class="recovery-box">
+        <div class="recovery-code" id="recoveryCodeText">${authState.recoveryCode}</div>
+        <div class="recovery-warn">Одноразовый — после использования нужно будет сразу задать новый код доступа.</div>
+      </div>
+      <button class="auth-ghost-btn" onclick="copyRecoveryCode()">📋 Скопировать код</button>
+      <div class="auth-check-row">
+        <input type="checkbox" id="recoverySavedCheck" onchange="document.getElementById('finishSetupBtn').disabled=!this.checked">
+        <label for="recoverySavedCheck">Я сохранил(а) код восстановления в надёжном месте</label>
+      </div>
+      <button class="auth-primary-btn" id="finishSetupBtn" disabled onclick="finishSetup()">Готово, войти в штаб</button>
+      <div class="auth-status" id="authStatus"></div>
+    `;
+    return;
+  }
+}
+function copyRecoveryCode(){
+  const text=document.getElementById('recoveryCodeText').textContent;
+  navigator.clipboard?.writeText(text).then(()=>setAuthStatus('Код скопирован в буфер обмена')).catch(()=>{});
+}
+async function finishSetup(){
+  const codeHash = await sha256Hex(authState.newCode);
+  const recoveryHash = await sha256Hex(authState.recoveryCode.replace(/-/g,''));
+  await save('accessAuth', {codeHash, recoveryHash, recoveryUsed:false});
+  sessionStorage.setItem(AUTH_SESSION_KEY,'1');
+  unlockApp('');
+}
+
+function startRecoveryFlow(){
+  const card=document.getElementById('authCard');
+  card.innerHTML = `
+    <div class="auth-badge">🗝️</div>
+    <h2>Код восстановления</h2>
+    <div class="auth-sub">Введите одноразовый код восстановления, который вы сохранили при настройке.</div>
+    <input id="recoveryInput" placeholder="XXXXX-XXXXX" style="width:100%;text-align:center;font-family:'JetBrains Mono',monospace;font-size:16px;letter-spacing:.08em;padding:13px;">
+    <div class="auth-status" id="authStatus"></div>
+    <button class="auth-primary-btn" onclick="verifyRecoveryCode()">Подтвердить</button>
+    <div class="auth-link" onclick="renderAuthGate()">← Назад ко входу по коду</div>
+  `;
+  setTimeout(()=>document.getElementById('recoveryInput')?.focus(), 60);
+}
+async function verifyRecoveryCode(){
+  const auth = await load('accessAuth', null);
+  const input = document.getElementById('recoveryInput').value.replace(/[^A-Za-z0-9]/g,'').toUpperCase();
+  if(!auth || !input){ setAuthStatus('Введите код восстановления', true); return; }
+  const hash = await sha256Hex(input);
+  if(auth.recoveryUsed){ setAuthStatus('Этот код восстановления уже был использован.', true); return; }
+  if(hash !== auth.recoveryHash){ setAuthStatus('Код восстановления неверный', true); return; }
+  auth.recoveryUsed = true;
+  await save('accessAuth', auth);
+  setAuthStatus('Код принят. Задайте новый код доступа.');
+  authState = {mode:'setup', step:1, pendingCode:'', newCode:'', recoveryCode:''};
+  setTimeout(renderSetupStep, 500);
+}
+
+function demoUnlock(){
+  sessionStorage.setItem(AUTH_SESSION_KEY,'1');
+  unlockApp('');
+}
+function unlockApp(label){
+  const lock=document.getElementById('authLock');
+  if(lock) lock.style.display='none';
+}
+
+/* ---- Telegram / QR / Passkey (активируются после подключения server.js) ---- */
+async function startTelegramLogin(){
+  try{ const r=await fetch('/api/auth/telegram/start',{method:'POST'}); const j=await r.json(); if(!r.ok) throw new Error(j.error||'Ошибка'); window.open(j.url,'_blank','noopener'); setAuthStatus('Откройте Telegram и нажмите Start. После подтверждения вернитесь сюда.'); pollQr(j.nonce); }catch(e){ setAuthStatus('Telegram-вход появится после запуска server.js и настройки .env.'); }
+}
+async function startQrLogin(){
+  try{ const r=await fetch('/api/auth/qr/create',{method:'POST'}); const j=await r.json(); if(!r.ok) throw new Error(j.error||'Ошибка');
+    const w=window.open('','_blank','width=420,height=520'); if(w){ w.document.write(`<title>QR вход</title><body style="font-family:Arial;background:#111;color:#fff;text-align:center;padding:25px"><h2>Сканируйте QR в Telegram</h2><img src="${j.qrDataUrl}" width="320"><p>После подтверждения ботом это окно можно закрыть.</p></body>`); w.document.close(); }
+    setAuthStatus('QR создан. Сканируйте его через Telegram.'); pollQr(j.nonce);
+  }catch(e){ setAuthStatus('QR-вход появится после запуска server.js и настройки .env.'); }
+}
+async function pollQr(nonce){
+  for(let i=0;i<90;i++){
+    await new Promise(r=>setTimeout(r,2000));
+    try{ const r=await fetch('/api/auth/qr/status/'+encodeURIComponent(nonce),{credentials:'include'}); const j=await r.json();
+      if(j.status==='approved'){ sessionStorage.setItem(AUTH_SESSION_KEY,'1'); unlockApp(''); setAuthStatus(''); return; }
+      if(j.status==='expired'){ setAuthStatus('QR истёк. Создайте новый.', true); return; }
+    }catch(e){ return; }
+  }
+}
+async function startPasskeyLogin(){
+  if(!window.PublicKeyCredential || !window.SimpleWebAuthnBrowser){ setAuthStatus('На этом устройстве WebAuthn/Passkey недоступен.', true); return; }
+  if(location.protocol!=='https:' && location.hostname!=='localhost'){ setAuthStatus('Для биометрии нужен HTTPS или localhost.', true); return; }
+  try{
+    const r=await fetch('/api/passkey/login/options'); const optionsJSON=await r.json(); if(!r.ok) throw new Error(optionsJSON.error);
+    const asseResp=await SimpleWebAuthnBrowser.startAuthentication({optionsJSON});
+    const vr=await fetch('/api/passkey/login/verify',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify(asseResp)});
+    const j=await vr.json(); if(!j.verified) throw new Error(j.error||'Биометрия не подтверждена');
+    sessionStorage.setItem(AUTH_SESSION_KEY,'1'); unlockApp(''); setAuthStatus('');
+  }catch(e){ setAuthStatus('Биометрический вход пока не настроен — нужен server.js.', true); }
+}
+async function registerPasskey(){
+  const el=document.getElementById('passkeyStatus'); if(el) el.textContent='';
+  if(!window.SimpleWebAuthnBrowser){ if(el) el.textContent='Библиотека WebAuthn не загрузилась.'; return; }
+  try{
+    const r=await fetch('/api/passkey/register/options',{credentials:'include'}); const optionsJSON=await r.json(); if(!r.ok) throw new Error(optionsJSON.error||'Сначала войдите через Telegram');
+    const attResp=await SimpleWebAuthnBrowser.startRegistration({optionsJSON});
+    const vr=await fetch('/api/passkey/register/verify',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify(attResp)});
+    const j=await vr.json(); if(!j.verified) throw new Error('Не удалось привязать биометрию'); if(el) el.textContent='✅ Биометрия привязана к этому устройству.';
+  }catch(e){ if(el) el.textContent='Сначала войдите через Telegram/QR, затем повторите привязку.'; }
+}
+
+async function init(){
+  const theme = await load('theme', 'dark');
+  applyTheme(theme);
+  renderAuthGate();
+
+  plans = await load('plans', SAMPLE_PLANS);
+  achievements = await load('achievements', SAMPLE_ACH);
+  goals = (await load('goals', SAMPLE_GOALS)).map(normalizeGoal);
+  const accessNote = await load('accessNote', '');
+  document.getElementById('accessNote').value = accessNote;
+  await loadCheckin();
+  renderCheckin();
+  updateTagOptions();
+  renderPlans();
+  renderAch();
+  renderGoals();
+  renderWidget();
+
+  updateClock();
+  setInterval(updateClock, 1000);
+}
+init();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(console.error));
+}
+</script>
+</body>
+</html>
